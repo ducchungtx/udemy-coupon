@@ -1,467 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <title>Udemy Coupon Finder</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Tailwind CSS từ CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom styles cho các thành phần không được Tailwind hỗ trợ -->
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .coupon-box {
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        .coupon-box:hover {
-            background-color: #f5f9ff;
-            border-color: #3498db;
-            transform: translateY(-2px);
-        }
-        h1, h2 {
-            color: #2c3e50;
-        }
-        a {
-            color: #3498db;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .course-list {
-            margin-top: 30px;
-        }
-        .course-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .course-item:hover {
-            background-color: #f9f9f9;
-        }
-        #url-form {
-            margin: 20px 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            border-radius: 5px;
-        }
-        #url-input {
-            width: 80%;
-            padding: 10px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 10px 15px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        #loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        #results {
-            display: none;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .pagination button {
-            padding: 5px 10px;
-            background-color: #f5f5f5;
-            color: #333;
-            border: 1px solid #ddd;
-            cursor: pointer;
-        }
-        .pagination button.active {
-            background-color: #3498db;
-            color: white;
-            border-color: #3498db;
-        }
-        .pagination button:hover:not(.active) {
-            background-color: #e5e5e5;
-        }
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .page-info {
-            text-align: center;
-            margin-top: 10px;
-            color: #666;
-            font-size: 14px;
-        }
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-        }
-        .per-page-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        select {
-            padding: 5px;
-            border-radius: 4px;
-        }
-        .clickable-hint {
-            font-size: 14px;
-            color: #666;
-            font-style: italic;
-            margin-top: 10px;
-        }
-        .coupon-title {
-            margin-top: 0;
-        }
-        .external-link {
-            display: inline-block;
-            margin-left: 10px;
-            font-size: 0.8em;
-            vertical-align: middle;
-        }
-        .scrollToTop {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #3498db;
-            color: white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            text-align: center;
-            line-height: 40px;
-            font-size: 20px;
-            cursor: pointer;
-            display: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-        .scrollToTop:hover {
-            background-color: #2980b9;
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px;
         }
     </style>
-</head>
-<body>
-    <h1>Udemy Coupon Finder</h1>
-
-    <div id="url-form">
-        <h2>Extract Courses from HacksNation</h2>
-        <p>Enter a HacksNation URL to extract free Udemy courses:</p>
-        <input type="text" id="url-input" placeholder="e.g., https://hacksnation.com/d/36437-udemy-free-courses-for-11-april-2025">
-        <button id="extract-button">Extract Courses</button>
-    </div>
-
-    <div id="loading">
-        <p>Loading courses...</p>
-    </div>
-
-    <div id="results">
-        <h2>Extracted Courses (<span id="course-count">0</span>)</h2>
-
-        <div class="controls">
-            <div class="per-page-control">
-                <label for="per-page">Courses per page:</label>
-                <select id="per-page">
-                    <option value="5">5</option>
-                    <option value="10" selected>10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-            <div>
-                <button id="sort-toggle">Toggle Sort Order</button>
-            </div>
-        </div>
-
-        <div id="course-list" class="course-list"></div>
-
-        <div class="page-info">Showing <span id="showing-from">0</span>-<span id="showing-to">0</span> of <span id="total-items">0</span> courses</div>
-
-        <div class="pagination" id="pagination-controls"></div>
-    </div>
-
-    <hr>
-
-    <h2>Latest Coupon Posts</h2>
-    <p class="clickable-hint">Click on any post below to extract its courses</p>
-    {% if coupons %}
-        {% for coupon in coupons %}
-        <div class="coupon-box" data-url="{{ coupon.url }}">
-            <h2 class="coupon-title">{{ coupon.title }}</h2>
-            <p>
-                Extract courses from this post
-                <a href="{{ coupon.url }}" target="_blank" class="external-link" onclick="event.stopPropagation();">(Open in new tab)</a>
-            </p>
-        </div>
-        {% endfor %}
-    {% else %}
-    <p>No coupons found. Please try again later.</p>
-    {% endif %}
-
-    <p><small>Data scraped from <a href="https://hacksnation.com/t/free-coupons" target="_blank">HacksNation</a></small></p>
-
-    <div class="scrollToTop" id="scroll-to-top">↑</div>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlInput = document.getElementById('url-input');
-            const extractButton = document.getElementById('extract-button');
-            const loadingDiv = document.getElementById('loading');
-            const resultsDiv = document.getElementById('results');
-            const courseCount = document.getElementById('course-count');
-            const courseList = document.getElementById('course-list');
-            const paginationControls = document.getElementById('pagination-controls');
-            const perPageSelect = document.getElementById('per-page');
-            const sortToggleBtn = document.getElementById('sort-toggle');
-            const showingFrom = document.getElementById('showing-from');
-            const showingTo = document.getElementById('showing-to');
-            const totalItems = document.getElementById('total-items');
-            const scrollToTop = document.getElementById('scroll-to-top');
-
-            // Pagination state
-            let currentPage = 1;
-            let itemsPerPage = parseInt(perPageSelect.value);
-            let allCourses = [];
-            let isReverseSorted = true; // Default is reversed (newest first)
-
-            // Function to display a specific page of courses
-            function displayPage(page) {
-                courseList.innerHTML = '';
-
-                // Calculate start and end indices
-                const startIndex = (page - 1) * itemsPerPage;
-                const endIndex = Math.min(startIndex + itemsPerPage, allCourses.length);
-
-                // Update the showing info
-                showingFrom.textContent = allCourses.length > 0 ? startIndex + 1 : 0;
-                showingTo.textContent = endIndex;
-                totalItems.textContent = allCourses.length;
-
-                // Display courses for current page
-                for (let i = startIndex; i < endIndex; i++) {
-                    const course = allCourses[i];
-                    const courseItem = document.createElement('div');
-                    courseItem.className = 'course-item';
-                    courseItem.innerHTML = `
-                        <p><strong>${course.title}</strong></p>
-                        <p><a href="${course.url}" target="_blank">Enroll for Free</a></p>
-                    `;
-                    courseList.appendChild(courseItem);
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3498db',
+                        secondary: '#2c3e50',
+                        accent: '#f5f9ff',
+                    }
                 }
-
-                // Update pagination controls
-                updatePaginationControls();
             }
-
-            // Function to update pagination controls
-            function updatePaginationControls() {
-                paginationControls.innerHTML = '';
-
-                const totalPages = Math.ceil(allCourses.length / itemsPerPage);
-
-                // Previous button
-                const prevBtn = document.createElement('button');
-                prevBtn.innerHTML = '&laquo; Prev';
-                prevBtn.disabled = currentPage === 1;
-                prevBtn.addEventListener('click', () => {
-                    if (currentPage > 1) {
-                        currentPage--;
-                        displayPage(currentPage);
-                    }
-                });
-                paginationControls.appendChild(prevBtn);
-
-                // Generate page buttons (with limit to avoid too many buttons)
-                const maxButtons = 5;
-                let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-                let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-
-                // Adjust start page if we're near the end
-                if (endPage - startPage + 1 < maxButtons) {
-                    startPage = Math.max(1, endPage - maxButtons + 1);
-                }
-
-                // First page button if not visible in current range
-                if (startPage > 1) {
-                    const firstBtn = document.createElement('button');
-                    firstBtn.textContent = '1';
-                    firstBtn.addEventListener('click', () => {
-                        currentPage = 1;
-                        displayPage(currentPage);
-                    });
-                    paginationControls.appendChild(firstBtn);
-
-                    // Ellipsis if there's a gap
-                    if (startPage > 2) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.textContent = '...';
-                        paginationControls.appendChild(ellipsis);
-                    }
-                }
-
-                // Page number buttons
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageBtn = document.createElement('button');
-                    pageBtn.textContent = i;
-                    if (i === currentPage) {
-                        pageBtn.classList.add('active');
-                    }
-                    pageBtn.addEventListener('click', () => {
-                        currentPage = i;
-                        displayPage(currentPage);
-                    });
-                    paginationControls.appendChild(pageBtn);
-                }
-
-                // Last page button if not visible in current range
-                if (endPage < totalPages) {
-                    // Ellipsis if there's a gap
-                    if (endPage < totalPages - 1) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.textContent = '...';
-                        paginationControls.appendChild(ellipsis);
-                    }
-
-                    const lastBtn = document.createElement('button');
-                    lastBtn.textContent = totalPages;
-                    lastBtn.addEventListener('click', () => {
-                        currentPage = totalPages;
-                        displayPage(currentPage);
-                    });
-                    paginationControls.appendChild(lastBtn);
-                }
-
-                // Next button
-                const nextBtn = document.createElement('button');
-                nextBtn.innerHTML = 'Next &raquo;';
-                nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-                nextBtn.addEventListener('click', () => {
-                    if (currentPage < totalPages) {
-                        currentPage++;
-                        displayPage(currentPage);
-                    }
-                });
-                paginationControls.appendChild(nextBtn);
-            }
-
-            // Function to toggle sort order
-            function toggleSortOrder() {
-                isReverseSorted = !isReverseSorted;
-                allCourses.reverse();
-                currentPage = 1;
-                displayPage(currentPage);
-                sortToggleBtn.textContent = isReverseSorted ? 'Show Oldest First' : 'Show Newest First';
-            }
-
-            // Function to extract courses from a URL
-            function extractCoursesFromUrl(url) {
-                if (!url) return;
-
-                // Fill the input field with the URL
-                urlInput.value = url;
-
-                // Show loading indicator
-                loadingDiv.style.display = 'block';
-                resultsDiv.style.display = 'none';
-                courseList.innerHTML = '';
-
-                // Scroll to the top of the page
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-
-                // Fetch courses from API
-                fetch(`/api/extract-courses?url=${encodeURIComponent(url)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        loadingDiv.style.display = 'none';
-                        resultsDiv.style.display = 'block';
-
-                        courseCount.textContent = data.count;
-
-                        if (data.courses && data.courses.length > 0) {
-                            // Store all courses
-                            allCourses = data.courses;
-
-                            // Default is reversed (newest first)
-                            if (isReverseSorted) {
-                                allCourses.reverse();
-                            }
-
-                            // Reset to first page and display
-                            currentPage = 1;
-                            displayPage(currentPage);
-                        } else {
-                            courseList.innerHTML = '<p>No courses found on this page.</p>';
-                            paginationControls.innerHTML = '';
-                            showingFrom.textContent = '0';
-                            showingTo.textContent = '0';
-                            totalItems.textContent = '0';
-                        }
-                    })
-                    .catch(error => {
-                        loadingDiv.style.display = 'none';
-                        courseList.innerHTML = `<p>Error extracting courses: ${error.message}</p>`;
-                        resultsDiv.style.display = 'block';
-                        paginationControls.innerHTML = '';
-                        showingFrom.textContent = '0';
-                        showingTo.textContent = '0';
-                        totalItems.textContent = '0';
-                    });
-            }
-
-            // Event listener for sort toggle
-            sortToggleBtn.addEventListener('click', toggleSortOrder);
-            sortToggleBtn.textContent = isReverseSorted ? 'Show Oldest First' : 'Show Newest First';
-
-            // Event listener for items per page change
-            perPageSelect.addEventListener('change', function() {
-                itemsPerPage = parseInt(this.value);
-                currentPage = 1;
-                displayPage(currentPage);
-            });
-
-            // Extract courses button handler
-            extractButton.addEventListener('click', function() {
-                const url = urlInput.value.trim();
-                extractCoursesFromUrl(url);
-            });
-
-            // Add click handler to all coupon boxes
-            const couponBoxes = document.querySelectorAll('.coupon-box');
-            couponBoxes.forEach(box => {
-                box.addEventListener('click', function() {
-                    const url = this.getAttribute('data-url');
-                    extractCoursesFromUrl(url);
-                });
-            });
-
-            // Scroll to top button functionality
-            window.addEventListener('scroll', function() {
-                if (window.pageYOffset > 300) {
-                    scrollToTop.style.display = 'block';
-                } else {
-                    scrollToTop.style.display = 'none';
-                }
-            });
-
-            scrollToTop.addEventListener('click', function() {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        });
+        }
     </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+    <div class="max-w-3xl mx-auto p-6">
+        <h1 class="text-3xl font-bold text-secondary mb-6">Udemy Coupon Finder</h1>
+
+        <div id="url-form" class="mb-8 p-5 bg-white rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold text-secondary mb-3">Extract Courses from HacksNation</h2>
+            <p class="mb-4">Enter a HacksNation URL to extract free Udemy courses:</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" id="url-input" placeholder="e.g., https://hacksnation.com/d/36437-udemy-free-courses"
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                <button id="extract-button" class="px-6 py-2 bg-primary hover:bg-blue-600 text-white rounded-md transition-colors shadow-sm">
+                    Extract Courses
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-primary"></div>
+            <p class="mt-4 text-gray-600">Loading courses...</p>
+        </div>
+
+        <div id="results" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-secondary">Extracted Courses (<span id="course-count" class="font-bold">0</span>)</h2>
+            </div>
+
+            <div class="controls mb-4 flex flex-col sm:flex-row justify-between gap-3">
+                <div class="per-page-control flex items-center space-x-2">
+                    <label for="per-page" class="text-sm text-gray-600">Courses per page:</label>
+                    <select id="per-page" class="px-2 py-1 border border-gray-300 rounded-md bg-white text-sm">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div>
+                    <button id="sort-toggle" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md text-sm transition-colors">
+                        Toggle Sort Order
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ô tìm kiếm -->
+            <div class="search-container relative bg-white rounded-md border border-gray-300 mb-5 flex items-center p-2">
+                <span class="search-icon text-gray-500 ml-2">🔍</span>
+                <input type="text" id="search-input" placeholder="Search for courses by name..." autocomplete="off"
+                       class="w-full px-2 py-2 focus:outline-none">
+                <span id="clear-search" class="clear-search cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-full w-6 h-6 flex items-center justify-center text-gray-600">×</span>
+            </div>
+            <div id="search-results" class="search-results text-sm text-gray-600 mb-3"></div>
+
+            <div id="course-list" class="course-list bg-white rounded-lg shadow-md overflow-hidden divide-y divide-gray-200"></div>
+
+            <div class="page-info text-center my-4 text-gray-600 text-sm">
+                Showing <span id="showing-from">0</span>-<span id="showing-to">0</span> of <span id="total-items">0</span> courses
+            </div>
+
+            <div class="pagination flex justify-center mt-4 mb-8" id="pagination-controls"></div>
+        </div>
+
+        <hr class="my-8 border-gray-200">
+
+        <h2 class="text-xl font-semibold text-secondary mb-3">Latest Coupon Posts</h2>
+        <p class="clickable-hint text-sm text-gray-500 italic mb-4">Click on any post below to extract its courses</p>
+
+        {% if coupons %}
+            {% for coupon in coupons %}
+            <div class="coupon-box bg-white rounded-lg shadow-md p-5 mb-4 cursor-pointer hover:bg-accent hover:border-primary hover:shadow-lg transition-all border border-transparent" data-url="{{ coupon.url }}">
+                <h2 class="coupon-title text-lg font-medium text-secondary">{{ coupon.title }}</h2>
+                <div class="flex items-center mt-2">
+                    <p class="text-primary font-medium">
+                        Extract courses from this post
+                    </p>
+                    <a href="{{ coupon.url }}" target="_blank" class="ml-2 text-xs text-gray-500 hover:text-gray-700 inline-flex items-center" onclick="event.stopPropagation();">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open in new tab
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="bg-white rounded-lg shadow-md p-5 text-center text-gray-500">
+                No coupons found. Please try again later.
+            </div>
+        {% endif %}
+
+        <p class="mt-8 text-xs text-gray-500 text-center">
+            Data scraped from <a href="https://hacksnation.com/t/free-coupons" target="_blank" class="text-primary hover:underline">HacksNation</a>
+        </p>
+
+        <button class="scrollToTop fixed bottom-6 right-6 bg-primary hover:bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hidden transition-colors" id="scroll-to-top">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

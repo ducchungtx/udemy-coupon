@@ -35,6 +35,7 @@ def extract_courses_from_url(url):
 
         # Find all course items
         courses = []
+        processed_urls = set()  # Để theo dõi các URL đã xử lý để tránh trùng lặp
 
         # Look for specific pattern where each course is listed with "Enroll for Free" link
         # This can be li elements containing both course name and enrollment link
@@ -48,6 +49,13 @@ def extract_courses_from_url(url):
             if enroll_link:
                 # Get the href attribute for enrollment
                 enrollment_url = enroll_link.get('href')
+
+                # Kiểm tra nếu URL này đã được xử lý
+                if enrollment_url in processed_urls:
+                    logger.info(f"Skipping duplicate URL: {enrollment_url}")
+                    continue
+
+                processed_urls.add(enrollment_url)
 
                 # Extract course name: it's the text content of the list item minus the "Enroll for Free" text
                 # Remove any trailing dash and spaces that might be present
@@ -75,6 +83,13 @@ def extract_courses_from_url(url):
                 if enroll_link:
                     enrollment_url = enroll_link.get('href')
 
+                    # Kiểm tra nếu URL này đã được xử lý
+                    if enrollment_url in processed_urls:
+                        logger.info(f"Skipping duplicate URL: {enrollment_url}")
+                        continue
+
+                    processed_urls.add(enrollment_url)
+
                     # Find the parent paragraph that contains the course name
                     parent = strong.find_parent('p') or strong.find_parent('li')
 
@@ -91,33 +106,51 @@ def extract_courses_from_url(url):
                         })
                         logger.info(f"Added course (alt method): {course_name}")
 
-        # If still no courses, try another approach
-        if not courses:
-            logger.info("No courses found with alternative method, trying direct link extraction")
+        # Try another approach to find more courses, not just when courses list is empty
+        logger.info("Trying direct link extraction for additional courses")
 
-            # Find all links on the page
-            all_links = soup.find_all('a')
+        # Find all links on the page
+        all_links = soup.find_all('a')
 
-            for link in all_links:
-                # Check if the link is for Udemy enrollment
-                href = link.get('href', '')
-                if 'udemy.com/course' in href and 'couponCode=' in href:
-                    # Find parent element containing the course name
-                    parent = link.find_parent('p') or link.find_parent('li')
+        for link in all_links:
+            # Check if the link is for Udemy enrollment
+            href = link.get('href', '')
+            if 'udemy.com/course' in href and 'couponCode=' in href:
+                # Kiểm tra nếu URL này đã được xử lý
+                if href in processed_urls:
+                    logger.info(f"Skipping duplicate URL: {href}")
+                    continue
 
-                    if parent:
-                        course_name = parent.get_text(strip=True).replace('Enroll for Free', '').strip()
-                        if course_name.endswith('–'):
-                            course_name = course_name[:-1].strip()
+                processed_urls.add(href)
 
-                        courses.append({
-                            'title': course_name,
-                            'url': href
-                        })
-                        logger.info(f"Added course (direct link method): {course_name}")
+                # Find parent element containing the course name
+                parent = link.find_parent('p') or link.find_parent('li')
 
-        logger.info(f"Total courses extracted: {len(courses)}")
-        return courses
+                if parent:
+                    course_name = parent.get_text(strip=True).replace('Enroll for Free', '').strip()
+                    if course_name.endswith('–'):
+                        course_name = course_name[:-1].strip()
+
+                    courses.append({
+                        'title': course_name,
+                        'url': href
+                    })
+                    logger.info(f"Added course (direct link method): {course_name}")
+
+        # Final check for duplicate titles (in rare cases, different URLs might point to same course)
+        unique_courses = []
+        seen_titles = set()
+
+        for course in courses:
+            # Chuẩn hóa tiêu đề để so sánh tốt hơn
+            normalized_title = course['title'].lower()
+
+            if normalized_title not in seen_titles:
+                seen_titles.add(normalized_title)
+                unique_courses.append(course)
+
+        logger.info(f"Total unique courses extracted: {len(unique_courses)} (from {len(courses)} total)")
+        return unique_courses
 
     except Exception as e:
         logger.error(f"Error extracting courses from URL: {e}")
