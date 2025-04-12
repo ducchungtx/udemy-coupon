@@ -14,8 +14,15 @@
             padding: 20px;
             margin: 20px 0;
             border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
         }
-        h1 {
+        .coupon-box:hover {
+            background-color: #f5f9ff;
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+        h1, h2 {
             color: #2c3e50;
         }
         a {
@@ -25,16 +32,181 @@
         a:hover {
             text-decoration: underline;
         }
+        .course-list {
+            margin-top: 30px;
+        }
+        .course-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .course-item:hover {
+            background-color: #f9f9f9;
+        }
+        #url-form {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        #url-input {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        #results {
+            display: none;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 5px 10px;
+            background-color: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .pagination button.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .pagination button:hover:not(.active) {
+            background-color: #e5e5e5;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .page-info {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .per-page-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        select {
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .clickable-hint {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            margin-top: 10px;
+        }
+        .coupon-title {
+            margin-top: 0;
+        }
+        .external-link {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.8em;
+            vertical-align: middle;
+        }
+        .scrollToTop {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .scrollToTop:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
-    <h1>Latest Udemy Coupons from HacksNation</h1>
+    <h1>Udemy Coupon Finder</h1>
 
+    <div id="url-form">
+        <h2>Extract Courses from HacksNation</h2>
+        <p>Enter a HacksNation URL to extract free Udemy courses:</p>
+        <input type="text" id="url-input" placeholder="e.g., https://hacksnation.com/d/36437-udemy-free-courses-for-11-april-2025">
+        <button id="extract-button">Extract Courses</button>
+    </div>
+
+    <div id="loading">
+        <p>Loading courses...</p>
+    </div>
+
+    <div id="results">
+        <h2>Extracted Courses (<span id="course-count">0</span>)</h2>
+
+        <div class="controls">
+            <div class="per-page-control">
+                <label for="per-page">Courses per page:</label>
+                <select id="per-page">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div>
+                <button id="sort-toggle">Toggle Sort Order</button>
+            </div>
+        </div>
+
+        <div id="course-list" class="course-list"></div>
+
+        <div class="page-info">Showing <span id="showing-from">0</span>-<span id="showing-to">0</span> of <span id="total-items">0</span> courses</div>
+
+        <div class="pagination" id="pagination-controls"></div>
+    </div>
+
+    <hr>
+
+    <h2>Latest Coupon Posts</h2>
+    <p class="clickable-hint">Click on any post below to extract its courses</p>
     {% if coupons %}
         {% for coupon in coupons %}
-        <div class="coupon-box">
-            <h2>{{ coupon.title }}</h2>
-            <p><a href="{{ coupon.url }}" target="_blank">Go to post</a></p>
+        <div class="coupon-box" data-url="{{ coupon.url }}">
+            <h2 class="coupon-title">{{ coupon.title }}</h2>
+            <p>
+                Extract courses from this post
+                <a href="{{ coupon.url }}" target="_blank" class="external-link" onclick="event.stopPropagation();">(Open in new tab)</a>
+            </p>
         </div>
         {% endfor %}
     {% else %}
@@ -42,5 +214,254 @@
     {% endif %}
 
     <p><small>Data scraped from <a href="https://hacksnation.com/t/free-coupons" target="_blank">HacksNation</a></small></p>
+
+    <div class="scrollToTop" id="scroll-to-top">↑</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlInput = document.getElementById('url-input');
+            const extractButton = document.getElementById('extract-button');
+            const loadingDiv = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+            const courseCount = document.getElementById('course-count');
+            const courseList = document.getElementById('course-list');
+            const paginationControls = document.getElementById('pagination-controls');
+            const perPageSelect = document.getElementById('per-page');
+            const sortToggleBtn = document.getElementById('sort-toggle');
+            const showingFrom = document.getElementById('showing-from');
+            const showingTo = document.getElementById('showing-to');
+            const totalItems = document.getElementById('total-items');
+            const scrollToTop = document.getElementById('scroll-to-top');
+
+            // Pagination state
+            let currentPage = 1;
+            let itemsPerPage = parseInt(perPageSelect.value);
+            let allCourses = [];
+            let isReverseSorted = true; // Default is reversed (newest first)
+
+            // Function to display a specific page of courses
+            function displayPage(page) {
+                courseList.innerHTML = '';
+
+                // Calculate start and end indices
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, allCourses.length);
+
+                // Update the showing info
+                showingFrom.textContent = allCourses.length > 0 ? startIndex + 1 : 0;
+                showingTo.textContent = endIndex;
+                totalItems.textContent = allCourses.length;
+
+                // Display courses for current page
+                for (let i = startIndex; i < endIndex; i++) {
+                    const course = allCourses[i];
+                    const courseItem = document.createElement('div');
+                    courseItem.className = 'course-item';
+                    courseItem.innerHTML = `
+                        <p><strong>${course.title}</strong></p>
+                        <p><a href="${course.url}" target="_blank">Enroll for Free</a></p>
+                    `;
+                    courseList.appendChild(courseItem);
+                }
+
+                // Update pagination controls
+                updatePaginationControls();
+            }
+
+            // Function to update pagination controls
+            function updatePaginationControls() {
+                paginationControls.innerHTML = '';
+
+                const totalPages = Math.ceil(allCourses.length / itemsPerPage);
+
+                // Previous button
+                const prevBtn = document.createElement('button');
+                prevBtn.innerHTML = '&laquo; Prev';
+                prevBtn.disabled = currentPage === 1;
+                prevBtn.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        displayPage(currentPage);
+                    }
+                });
+                paginationControls.appendChild(prevBtn);
+
+                // Generate page buttons (with limit to avoid too many buttons)
+                const maxButtons = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+                let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+                // Adjust start page if we're near the end
+                if (endPage - startPage + 1 < maxButtons) {
+                    startPage = Math.max(1, endPage - maxButtons + 1);
+                }
+
+                // First page button if not visible in current range
+                if (startPage > 1) {
+                    const firstBtn = document.createElement('button');
+                    firstBtn.textContent = '1';
+                    firstBtn.addEventListener('click', () => {
+                        currentPage = 1;
+                        displayPage(currentPage);
+                    });
+                    paginationControls.appendChild(firstBtn);
+
+                    // Ellipsis if there's a gap
+                    if (startPage > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.textContent = '...';
+                        paginationControls.appendChild(ellipsis);
+                    }
+                }
+
+                // Page number buttons
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.textContent = i;
+                    if (i === currentPage) {
+                        pageBtn.classList.add('active');
+                    }
+                    pageBtn.addEventListener('click', () => {
+                        currentPage = i;
+                        displayPage(currentPage);
+                    });
+                    paginationControls.appendChild(pageBtn);
+                }
+
+                // Last page button if not visible in current range
+                if (endPage < totalPages) {
+                    // Ellipsis if there's a gap
+                    if (endPage < totalPages - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.textContent = '...';
+                        paginationControls.appendChild(ellipsis);
+                    }
+
+                    const lastBtn = document.createElement('button');
+                    lastBtn.textContent = totalPages;
+                    lastBtn.addEventListener('click', () => {
+                        currentPage = totalPages;
+                        displayPage(currentPage);
+                    });
+                    paginationControls.appendChild(lastBtn);
+                }
+
+                // Next button
+                const nextBtn = document.createElement('button');
+                nextBtn.innerHTML = 'Next &raquo;';
+                nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+                nextBtn.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        displayPage(currentPage);
+                    }
+                });
+                paginationControls.appendChild(nextBtn);
+            }
+
+            // Function to toggle sort order
+            function toggleSortOrder() {
+                isReverseSorted = !isReverseSorted;
+                allCourses.reverse();
+                currentPage = 1;
+                displayPage(currentPage);
+                sortToggleBtn.textContent = isReverseSorted ? 'Show Oldest First' : 'Show Newest First';
+            }
+
+            // Function to extract courses from a URL
+            function extractCoursesFromUrl(url) {
+                if (!url) return;
+
+                // Fill the input field with the URL
+                urlInput.value = url;
+
+                // Show loading indicator
+                loadingDiv.style.display = 'block';
+                resultsDiv.style.display = 'none';
+                courseList.innerHTML = '';
+
+                // Scroll to the top of the page
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Fetch courses from API
+                fetch(`/api/extract-courses?url=${encodeURIComponent(url)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        loadingDiv.style.display = 'none';
+                        resultsDiv.style.display = 'block';
+
+                        courseCount.textContent = data.count;
+
+                        if (data.courses && data.courses.length > 0) {
+                            // Store all courses
+                            allCourses = data.courses;
+
+                            // Default is reversed (newest first)
+                            if (isReverseSorted) {
+                                allCourses.reverse();
+                            }
+
+                            // Reset to first page and display
+                            currentPage = 1;
+                            displayPage(currentPage);
+                        } else {
+                            courseList.innerHTML = '<p>No courses found on this page.</p>';
+                            paginationControls.innerHTML = '';
+                            showingFrom.textContent = '0';
+                            showingTo.textContent = '0';
+                            totalItems.textContent = '0';
+                        }
+                    })
+                    .catch(error => {
+                        loadingDiv.style.display = 'none';
+                        courseList.innerHTML = `<p>Error extracting courses: ${error.message}</p>`;
+                        resultsDiv.style.display = 'block';
+                        paginationControls.innerHTML = '';
+                        showingFrom.textContent = '0';
+                        showingTo.textContent = '0';
+                        totalItems.textContent = '0';
+                    });
+            }
+
+            // Event listener for sort toggle
+            sortToggleBtn.addEventListener('click', toggleSortOrder);
+            sortToggleBtn.textContent = isReverseSorted ? 'Show Oldest First' : 'Show Newest First';
+
+            // Event listener for items per page change
+            perPageSelect.addEventListener('change', function() {
+                itemsPerPage = parseInt(this.value);
+                currentPage = 1;
+                displayPage(currentPage);
+            });
+
+            // Extract courses button handler
+            extractButton.addEventListener('click', function() {
+                const url = urlInput.value.trim();
+                extractCoursesFromUrl(url);
+            });
+
+            // Add click handler to all coupon boxes
+            const couponBoxes = document.querySelectorAll('.coupon-box');
+            couponBoxes.forEach(box => {
+                box.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    extractCoursesFromUrl(url);
+                });
+            });
+
+            // Scroll to top button functionality
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollToTop.style.display = 'block';
+                } else {
+                    scrollToTop.style.display = 'none';
+                }
+            });
+
+            scrollToTop.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    </script>
 </body>
 </html>
