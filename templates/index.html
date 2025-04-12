@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Udemy Coupon Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .coupon-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Latest Udemy Coupons from HacksNation</h1>
+
+    {% if coupons %}
+        {% for coupon in coupons %}
+        <div class="coupon-box">
+            <h2>{{ coupon.title }}</h2>
+            <p><a href="{{ coupon.url }}" target="_blank">Go to post</a></p>
+        </div>
+        {% endfor %}
+    {% else %}
+    <p>No coupons found. Please try again later.</p>
+    {% endif %}
+
+    <p><small>Data scraped from <a href="https://hacksnation.com/t/free-coupons" target="_blank">HacksNation</a></small></p>
+</body>
+</html>
